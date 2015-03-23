@@ -12,6 +12,7 @@ var favicon = require('serve-favicon'),
 var config = {
     log: true,
     readline: true,
+    logFile: 'none',
     ipadr: '127.0.0.1' || 'localhost',
     port: 3000,
     ssl: false
@@ -61,7 +62,7 @@ app.use('/chat', express.static(__dirname + '/public'));
 app.get('/chat', function (req, res) {
     res.render('pages/index');
 });
-      
+
 
 // Connections
 var server = app.listen(config.port, config.ipadr, function() {
@@ -96,7 +97,7 @@ chat.on('connection', function(conn) {
         un: null,
         role: 0
     };
-    
+
     if(bans.indexOf(clients[conn.id].ip) > -1) {
         conn.write(JSON.stringify({type:'server', info:'rejected', reason:'banned'}));
         conn.close();
@@ -123,6 +124,19 @@ chat.on('connection', function(conn) {
                 if(data.type == 'update') return updateUser(conn.id, data.user);
                 if(data.type == 'pm') consoleLog('message', '[PM] ' + colors.underline(clients[conn.id].un) + ' to ' + colors.underline(data.extra) + ': ' + data.message);
                 else consoleLog('message', '[' + data.type.charAt(0).toUpperCase() + data.type.substring(1) + '] ' + colors.underline(clients[conn.id].un) + ': ' + data.message);
+
+        		if(typeof config.logFile != 'undefined' || config.logFile != 'none') {
+                    var writeData = '[' + getTime() + '] [' + data.type.charAt(0).toUpperCase() + data.type.substring(1) + '] ' + clients[conn.id].un + ': ' + data.message+'\n';
+                    fs.stat(config.logFile, function(err, stat) {
+                        if(err == null) {
+                            fs.appendFile(config.logFile, writeData);
+                        } else if(err.code == 'ENOENT') {
+                            fs.writeFile(config.logFile, writeData);
+                        } else {
+                            throw err;
+                        }
+                    });
+        		}
 
                 if(data.type != 'update') handleSocket(clients[conn.id], message);
             } catch(err) {
@@ -312,7 +326,7 @@ function handleSocket(user, message) {
                                         return sendBack(data, user);
                                     }
                                     break;
-                            }                            
+                            }
                             sendToAll(data);
                         } else {
                             data.type = 'light';
@@ -339,12 +353,12 @@ function handleSocket(user, message) {
 function getTime() {
     var now = new Date(),
         time = [now.getHours(), now.getMinutes(), now.getSeconds()];
- 
+
     for(var i = 0; i < 3; i++) {
         if(time[i] < 10)
             time[i] = "0" + time[i];
     }
- 
+
     return time.join(":");
 }
 
