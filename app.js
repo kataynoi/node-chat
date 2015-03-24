@@ -123,20 +123,21 @@ chat.on('connection', function(conn) {
                 if(data.type == 'delete' && clients[conn.id].role > 0) sendToAll({type:'server', info:'delete', mid:data.message})
                 if(data.type == 'update') return updateUser(conn.id, data.user);
                 if(data.type == 'pm') consoleLog('message', '[PM] ' + colors.underline(clients[conn.id].un) + ' to ' + colors.underline(data.extra) + ': ' + data.message);
-                else consoleLog('message', '[' + data.type.charAt(0).toUpperCase() + data.type.substring(1) + '] ' + colors.underline(clients[conn.id].un) + ': ' + data.message);
-
-        		if(typeof config.logFile != 'undefined' || config.logFile != 'none') {
-                    var writeData = '[' + getTime() + '] [' + data.type.charAt(0).toUpperCase() + data.type.substring(1) + '] ' + clients[conn.id].un + ': ' + data.message+'\n';
-                    fs.stat(config.logFile, function(err, stat) {
-                        if(err == null) {
-                            fs.appendFile(config.logFile, writeData);
-                        } else if(err.code == 'ENOENT') {
-                            fs.writeFile(config.logFile, writeData);
-                        } else {
-                            throw err;
-                        }
-                    });
-        		}
+                else {
+                    consoleLog('message', '[' + data.type.charAt(0).toUpperCase() + data.type.substring(1) + '] ' + colors.underline(clients[conn.id].un) + ': ' + data.message);
+            		if(typeof config.logFile != 'undefined' || config.logFile != 'none') {
+                        var writeData = '[' + getTime() + '] ' + clients[conn.id].un + ': ' + data.message + '\n';
+                        fs.stat(config.logFile, function(err, stat) {
+                            if(err == null) {
+                                fs.appendFile(config.logFile, writeData);
+                            } else if(err.code == 'ENOENT') {
+                                fs.writeFile(config.logFile, writeData);
+                            } else {
+                                throw err;
+                            }
+                        });
+            		}
+                }
 
                 if(data.type != 'update') handleSocket(clients[conn.id], message);
             } catch(err) {
